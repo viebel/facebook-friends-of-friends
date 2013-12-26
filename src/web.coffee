@@ -89,6 +89,7 @@ app.get "/", (req, res) ->
 
 app.get "/facepile", (req, res) ->
   consumer_fb_ids_of_merchant req.query.merchantId, (fb_ids) ->
+      console.log "fb_ids: #{fb_ids}"
       facepile JSON.parse(fb_ids), req.query.token, (data) ->
         res.send JSON.stringify data
 
