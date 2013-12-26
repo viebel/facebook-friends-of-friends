@@ -20,9 +20,6 @@
     "express": "~3.4.7",
     "coffee-script": "~1.6.3"
   },
-  "engines": {
-    "node": "0.6.12"
-  },
   "devDependencies": {
     "supervisor": "~0.5.6"
   }
