@@ -30,7 +30,7 @@ facepile = (consumer_fb_ids, token, response_callback) ->
                   """,
             callback
 
-    mutual_friends_data = (fb_ids) ->
+    mutual_friends_data = (fb_ids, names) ->
         id2query = (id) ->
             method: 'GET'
             relative_url: "me/mutualfriends/#{id}"
@@ -46,7 +46,7 @@ facepile = (consumer_fb_ids, token, response_callback) ->
                         friends_of_consumers[friend_id].friends.push consumer_id
                     add(uid, friend.id) for friend in mutual_friends
 
-                fill(fb_ids[i], JSON.parse(mutual_friends.body).data) for mutual_friends, i in data
+                fill(names[i], JSON.parse(mutual_friends.body).data) for mutual_friends, i in data
                 user_data_to_display (id for id of friends_of_consumers), (data) ->
                     helpful_friends = (_.extend {}, f, friends_of_consumers[f.uid] for f in data)
                     response_callback helpful_friends
@@ -74,7 +74,7 @@ facepile = (consumer_fb_ids, token, response_callback) ->
                   x.isConsumer = true
                   x
             fofs_and_consumers = fofs_and_consumers[0..49] #limit to 50 as it is the limit for batch request to FB
-            mutual_friends_data(x.uid for x in fofs_and_consumers)
+            mutual_friends_data((x.uid for x in fofs_and_consumers), (x.name for x in fofs_and_consumers))
 
 consumer_fb_ids_of_merchant = (merchantId, callback) ->
     httpGet "plugins.shefing.com", "/consumers/facepile_me.json?merchantId=#{merchantId}", callback
