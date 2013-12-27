@@ -1,4 +1,14 @@
 _ = require 'underscore'
+pluralize = (n, singular, plural) ->
+    if n > 1
+        "#{n} #{plural}"
+    else
+        "#{n} #{singular}"
+first_and_more = (array, n, str) ->
+    if array.length <= n
+        array
+    else
+        array[0...n-1].concat ["#{self.count - n} #{str}"]
 httpGet = (host, path, callback) ->
     http = require("http")
     options =
@@ -90,11 +100,24 @@ app = express()
 app.use logfmt.requestLogger()
 app.get "/", (req, res) ->
   res.send "Hello My World!"
-
 app.get "/facepile", (req, res) ->
   consumer_fb_ids_of_merchant req.query.merchantId, (fb_ids) ->
       add_helpful_sentence = (friend) ->
-              sentence: 'I love you'
+          sentence = ->
+             my_friends_sentence = (friends, me_also)->
+                friends_list = ->
+                    first_and_more(friends, 5, 'autres').toString()#to_sentence( :two_words_connector => ' et ', :last_word_connector => ' et ')
+                singular = if me_also then 'sommes des clients' else 'est un client'
+                plural = if me_also then 'sommes des clients' else 'sont des clients'
+                "#{pluralize(friends.length, "de mes amis #{singular}", "de mes amis #{plural}")} de [[MERCHANT_NAME]]: #{friends_list friend.friends}"
+             if friend.friends?
+                if friend.isConsumer?
+                  "Moi, ainsi que #{my_friends_sentence(friend.friends, true)}"
+                else
+                  my_friends_sentence(friend.friends, false)
+             else
+                "Je suis un client de [[MERCHANT_NAME]]"
+          sentence: sentence()
       try
           facepile JSON.parse(fb_ids), req.query.token, (helpful_friends) ->
               helpful_friends_with_sentence = (_.extend {}, f, add_helpful_sentence f for f in helpful_friends)
