@@ -69,6 +69,10 @@ facepile = (consumer_fb_ids, token, response_callback) ->
                               and uid IN(#{consumer_fb_ids.toString()}))
                     """
         (data) ->
+            if data.error_msg?
+                response_callback(data.error_msg)
+                console.log "error in fql.multiquery: #{JSON.stringify data.error_msg}"
+                return
             [friends_and_consumers, fofs_and_consumers] = (x.fql_result_set for x in data)
             friends_and_consumers = friends_and_consumers.map (x) ->
                   x.isConsumer = true
@@ -77,7 +81,7 @@ facepile = (consumer_fb_ids, token, response_callback) ->
             mutual_friends_data((x.uid for x in fofs_and_consumers), (x.name for x in fofs_and_consumers))
 
 consumer_fb_ids_of_merchant = (merchantId, callback) ->
-    httpGet "plugins.shefing.com", "/consumers/facepile_me.json?merchantId=#{merchantId}", callback
+    httpGet "plugins.shefing.com", "/merchants/#{merchantId}/consumer_fb_ids.json?", callback
                 
 
 express = require("express")
@@ -89,9 +93,15 @@ app.get "/", (req, res) ->
 
 app.get "/facepile", (req, res) ->
   consumer_fb_ids_of_merchant req.query.merchantId, (fb_ids) ->
-      console.log "fb_ids: #{fb_ids}"
-      facepile JSON.parse(fb_ids), req.query.token, (data) ->
-        res.send JSON.stringify data
+      add_helpful_sentence = (friend) ->
+              sentence: 'I love you'
+      try
+          facepile JSON.parse(fb_ids), req.query.token, (helpful_friends) ->
+              helpful_friends_with_sentence = (_.extend {}, f, add_helpful_sentence f for f in helpful_friends)
+              res.send JSON.stringify helpful_friends_with_sentence
+      catch error
+            res.send "error"
+            console.log "Exception in the callback of consumer_fb_ids_of_merchant: #{error}"
 
 
 port = process.env.PORT or 5000
