@@ -98,19 +98,21 @@ logfmt = require("logfmt").namespace app: 'shefing-facebook'
 app = express()
 app.use logfmt.requestLogger()
 app.get "/", (req, res) ->
-  res.send "Hello My World!"
+   res.send "Hello My World!"
 app.get "/friends_of_friends", (req, res) ->
-  consumer_fb_ids_of_merchant req.query.merchantId,
+   consumer_fb_ids_of_merchant req.query.merchantId,
       demo: req.query.demo,
       (fb_ids) ->
-          merchant_name = "Optical Center"
           try
              facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, error) ->
                   if error?
                       res.send JSON.stringify helpful_friends
                       logfmt.log helpful_friends
                       return
-                  res.send "#{req.query.callback}(#{JSON.stringify helpful_friends});"
+                  if callback?
+                      res.send "#{req.query.callback}(#{JSON.stringify helpful_friends});"
+                  else
+                      res.send JSON.stringify helpful_friends
           catch error
                 res.send "error"
                 logfmt.error error
