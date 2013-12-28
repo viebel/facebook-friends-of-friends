@@ -1,15 +1,5 @@
 _ = require 'underscore'
 querystring = require 'querystring'
-pluralize = (n, singular, plural) ->
-    if n > 1
-        "#{n} #{plural}"
-    else
-        "#{n} #{singular}"
-first_and_more = (array, n, str) ->
-    if array.length <= n
-        array
-    else
-        array[0...n-1].concat ["#{self.count - n} #{str}"]
 httpGet = (host, path, callback) ->
     http = require("http")
     logfmt.log
@@ -114,40 +104,13 @@ app.get "/friends_of_friends", (req, res) ->
       demo: req.query.demo,
       (fb_ids) ->
           merchant_name = "Optical Center"
-          add_helpful_sentence = (friend) ->
-              sentence = ->
-                 my_friends_sentence = (friends, me_also)->
-                    friends_list = ->
-                        first_and_more(friends, 5, 'autres').toString()#to_sentence( :two_words_connector => ' et ', :last_word_connector => ' et ')
-                    singular = if me_also then 'sommes des clients' else 'est un client'
-                    plural = if me_also then 'sommes des clients' else 'sont des clients'
-                    "#{pluralize(friends.length, "de mes amis #{singular}", "de mes amis #{plural}")} de [[MERCHANT_NAME]]: #{friends_list friend.friends}"
-                 if friend.friends?
-                    if friend.isConsumer?
-                      "Moi, ainsi que #{my_friends_sentence(friend.friends, true)}"
-                    else
-                      my_friends_sentence(friend.friends, false)
-                 else
-                    "Je suis un client de [[MERCHANT_NAME]]"
-              sentence: sentence()
-          view = (helpful_friends) ->
-              foo = (res, friend) ->
-                 res + """ 
-                    <div class ="helpful-friend" title="<div><img src='https://static.shefing.com/images/logo_75.png' style='height:25px; margin-top: -6px;'/><b>#{friend.name}</b>: &#147;<em>#{friend.sentence.replace '[[MERCHANT_NAME]]', merchant_name}.&#148;</em></div>">
-                        <img class=".img-responsive" src="#{friend.pic_square}"></img>
-                    </div>
-                 """
-              title: "my_name, #{helpful_friends.length} personnes de votre réseau <img src='https://static.shefing.com/images/facebook_logo_detail.gif' width='14px'></img> sont des clients de #{merchant_name}."
-              list: helpful_friends.reduce foo, ''
           try
-              facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, error) ->
+             facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, error) ->
                   if error?
                       res.send JSON.stringify helpful_friends
                       logfmt.log helpful_friends
                       return
-                  helpful_friends_with_sentence = (_.extend {}, f, add_helpful_sentence f for f in helpful_friends)
-                  #res.send JSON.stringify helpful_friends_with_sentence
-                  res.send "#{req.query.callback}(#{JSON.stringify view(helpful_friends_with_sentence[0..6])});"
+                  res.send "#{req.query.callback}(#{JSON.stringify helpful_friends});"
           catch error
                 res.send "error"
                 logfmt.error error
