@@ -131,14 +131,14 @@ app.get "/friends_of_friends", (req, res) ->
                     "Je suis un client de [[MERCHANT_NAME]]"
               sentence: sentence()
           view = (helpful_friends) ->
-              title: "my_name, #{helpful_friends.length} personnes de votre réseau <img src='https://static.shefing.com/images/facebook_logo_detail.gif' width='14px'></img> sont des clients de #{merchant_name}."
-              list: helpful_friends.reduce ((res, friend) ->
+              foo = (res, friend) ->
                  res + """ 
                     <div class ="helpful-friend" title="<div><img src='https://static.shefing.com/images/logo_75.png' style='height:25px; margin-top: -6px;'/><b>#{friend.name}</b>: &#147;<em>#{friend.sentence.replace '[[MERCHANT_NAME]]', merchant_name}.&#148;</em></div>">
                         <img class=".img-responsive" src="#{friend.pic_square}"></img>
                     </div>
-                 """),
-                ''
+                 """
+              title: "my_name, #{helpful_friends.length} personnes de votre réseau <img src='https://static.shefing.com/images/facebook_logo_detail.gif' width='14px'></img> sont des clients de #{merchant_name}."
+              list: helpful_friends.reduce foo, ''
           try
               facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, error) ->
                   if error?
