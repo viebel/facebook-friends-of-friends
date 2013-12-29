@@ -27,6 +27,7 @@
     "npm": ">=1.0.0"
   },
   "devDependencies": {
+    "newrelic": "~1.2.0",
     "supervisor": "~0.5.6"
   }
 }
