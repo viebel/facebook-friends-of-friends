@@ -1,3 +1,4 @@
+#require 'newrelic'
 _ = require 'underscore'
 querystring = require 'querystring'
 httpGet = (host, path, callback) ->
@@ -99,6 +100,8 @@ app = express()
 app.use logfmt.requestLogger()
 app.get "/", (req, res) ->
    res.send "Hello My World!"
+app.get "/slow", (req, res) ->
+    httpGet 'slowapi.com', '/delay/1', -> res.send('OK')
 app.get "/friends_of_friends", (req, res) ->
    consumer_fb_ids_of_merchant req.query.merchantId,
       demo: req.query.demo,
@@ -109,7 +112,7 @@ app.get "/friends_of_friends", (req, res) ->
                       res.send JSON.stringify helpful_friends
                       logfmt.log helpful_friends
                       return
-                  if callback?
+                  if req.query.callback?
                       res.send "#{req.query.callback}(#{JSON.stringify helpful_friends});"
                   else
                       res.send JSON.stringify helpful_friends
