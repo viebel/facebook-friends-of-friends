@@ -24,6 +24,7 @@ httpGet = (host, path, callback) ->
     req.end()
 facepile = (consumer_fb_ids, token, response_callback) ->
     FB = require 'fb'
+    me = {}
     FB.setAccessToken token
     FB.options
        appSecret: '532945086745127'
@@ -55,7 +56,7 @@ facepile = (consumer_fb_ids, token, response_callback) ->
                 fill(names[i], JSON.parse(mutual_friends.body).data) for mutual_friends, i in data
                 user_data_to_display (id for id of friends_of_consumers), (data) ->
                     helpful_friends = (_.extend {}, f, friends_of_consumers[f.uid] for f in data)
-                    response_callback helpful_friends
+                    response_callback helpful_friends, me
 
     FB.api
         method: 'fql.multiquery'
@@ -74,16 +75,20 @@ facepile = (consumer_fb_ids, token, response_callback) ->
                               and uid != me() 
                               and uid IN(#{consumer_fb_ids.toString()}))
                     """
+            me: """
+                    SELECT first_name, last_name FROM user where uid=me()
+                """
         (data) ->
             if data.error_msg?
-                response_callback(data.error_msg, true)
+                response_callback(data.error_msg)
                 logfmt.error new Error "error in fql.multiquery: #{JSON.stringify data.error_msg}"
                 return
             if data.error?
-                response_callback(data.error, true)
+                response_callback(data.error)
                 logfmt.error new Error error
                 return
-            [friends_and_consumers, fofs_and_consumers] = (x.fql_result_set for x in data)
+            [friends_and_consumers, fofs_and_consumers, me] = (x.fql_result_set for x in data)
+            me = me[0]
             friends_and_consumers = friends_and_consumers.map (x) ->
                   x.isConsumer = true
                   x
@@ -107,13 +112,12 @@ app.get "/friends_of_friends", (req, res) ->
       demo: req.query.demo,
       (fb_ids) ->
           try
-             facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, error) ->
-                  if error?
-                      res.send JSON.stringify helpful_friends
-                      logfmt.log helpful_friends
-                      return
+             facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, me) ->
                   if req.query.callback?
-                      res.send "#{req.query.callback}(#{JSON.stringify helpful_friends});"
+                      res.send "#{req.query.callback}(#{JSON.stringify
+                         me: me
+                         helpful_friends: helpful_friends
+                      });"
                   else
                       res.send JSON.stringify helpful_friends
           catch error
