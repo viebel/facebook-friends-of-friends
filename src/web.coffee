@@ -95,35 +95,36 @@ facepile = (consumer_fb_ids, token, response_callback) ->
             fofs_and_consumers = fofs_and_consumers[0..49] #limit to 50 as it is the limit for batch request to FB
             mutual_friends_data((x.uid for x in fofs_and_consumers), (x.name for x in fofs_and_consumers))
 
-consumer_fb_ids_of_merchant = (merchantId, args, callback) ->
-    httpGet "plugins.shefing.com", "/merchants/#{merchantId}/consumer_fb_ids.json?#{querystring.stringify args}", callback
-                
 
 express = require("express")
-logfmt = require("logfmt").namespace app: 'shefing-facebook'
+logfmt = require("logfmt").namespace app: 'facebook-friends-of-friends'
 app = express()
 app.use logfmt.requestLogger()
 app.get "/", (req, res) ->
    res.send "Hello My World!"
 app.get "/slow", (req, res) ->
     httpGet 'slowapi.com', '/delay/1', -> res.send('OK')
-app.get "/friends_of_friends", (req, res) ->
-   consumer_fb_ids_of_merchant req.query.merchantId,
-      demo: req.query.demo,
-      (fb_ids) ->
-          try
-             facepile JSON.parse(fb_ids), req.query.token, (helpful_friends, me) ->
-                  if req.query.callback?
-                      res.send "#{req.query.callback}(#{JSON.stringify
-                         me: me
-                         helpful_friends: helpful_friends
-                      });"
-                  else
-                      res.send JSON.stringify helpful_friends
-          catch error
-                res.send "error"
-                logfmt.error error
+app.get "/me", (req, res) -> #/me?token=<token>
+    FB = require 'fb'
+    FB.setAccessToken req.query.token
+    FB.api '/me', 'GET',
+          {"fields":"id,name"},
+          (response) ->
+              res.send response
 
+app.get "/facepile", (req, res) ->
+      try
+         facepile JSON.parse(req.query.fb_ids), req.query.token, (helpful_friends, me) ->
+              if req.query.callback?
+                  res.send "#{req.query.callback}(#{JSON.stringify
+                     me: me
+                     helpful_friends: helpful_friends
+                  });"
+              else
+                  res.send JSON.stringify helpful_friends
+      catch error
+            res.send "error"
+            logfmt.error error
 
 port = process.env.PORT or 5000
 app.listen port, ->
